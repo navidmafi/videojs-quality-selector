@@ -17,7 +17,7 @@ module.exports = function(videojs) {
          var sources = player.currentSources(),
              currentTime = player.currentTime(),
              currentPlaybackRate = player.playbackRate(),
-             currentPlayerRemoteTracks = player.textTracks().tracks_.slice(), // clone the text tracks array
+             currentPlayerTextTracks = player.textTracks().tracks_.slice(), // clone the text tracks array
              isPaused = player.paused(),
              selectedSource;
 
@@ -52,8 +52,9 @@ module.exports = function(videojs) {
                // been set by the SafeSeek operation.
                player._qualitySelectorSafeSeek = new SafeSeek(player, currentTime);
                player.playbackRate(currentPlaybackRate);
-               if (currentPlayerRemoteTracks) {
-                  for (const t of currentPlayerRemoteTracks) {
+               if (currentPlayerTextTracks && player.textTracks().tracks_[0] === undefined) {
+                  //We check for the existence of the text track because the player may have been created already with proper text tracks
+                  for (const t of currentPlayerTextTracks) {
                      const trackToAdd = {
                         kind: t.kind,
                         id: t.id,
