@@ -17,6 +17,7 @@ module.exports = function(videojs) {
          var sources = player.currentSources(),
              currentTime = player.currentTime(),
              currentPlaybackRate = player.playbackRate(),
+             currentPlayerRemoteTracks = player.textTracks().tracks_.slice(), // clone the text tracks array
              isPaused = player.paused(),
              selectedSource;
 
@@ -51,8 +52,22 @@ module.exports = function(videojs) {
                // been set by the SafeSeek operation.
                player._qualitySelectorSafeSeek = new SafeSeek(player, currentTime);
                player.playbackRate(currentPlaybackRate);
+               if (currentPlayerRemoteTracks) {
+                  for (const t of currentPlayerRemoteTracks) {
+                     const trackToAdd = {
+                        kind: t.kind,
+                        id: t.id,
+                        label: t.label,
+                        src: t.src,
+                        language: t.language,
+                        mode: t.mode,
+                        loaded: t.loaded,
+                     };
+   
+                     player.addRemoteTextTrack(trackToAdd);
+                  }
+               }
             }
-
             if (!isPaused) {
                player.play();
             }
