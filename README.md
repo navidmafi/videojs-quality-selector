@@ -11,6 +11,10 @@ nothing special for now. just some patches for fixing [this](https://github.com/
 
 ## How do I use it?
 
+Install with `npm i @navidmafi/videojs-quality-selector`
+
+NPM package : https://www.npmjs.com/package/@navidmafi/videojs-quality-selector
+
 Check out https://github.com/silvermine/videojs-quality-selector for usage and more information
 
 ## License
