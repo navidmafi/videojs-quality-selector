@@ -2,19 +2,25 @@
  * Copyright (c) 2017 Jeremy Thomerson
  * Licensed under the MIT license.
  */
-
-'use strict';
-
 var path = require('path'),
-    getCodeVersion = require('silvermine-serverless-utils/src/get-code-version'),
-    markdownlint = require('markdownlint');
+    getCodeVersion = require('silvermine-serverless-utils/src/get-code-version');
 
 const sass = require('sass');
 
 module.exports = function(grunt) {
 
    var DEBUG = !!grunt.option('debug'),
-       config;
+       pkgJSON = grunt.file.readJSON('package.json'),
+       config, versionInfo;
+
+   try {
+      versionInfo = getCodeVersion.both();
+   } catch(e) {
+      // When this package is installed as a git URL, getCodeVersion throws an error and
+      // is not able to find the git version for this package. So, we fall back to using
+      // the version number from package.json
+      versionInfo = pkgJSON.version;
+   }
 
    config = {
       js: {
@@ -45,14 +51,34 @@ module.exports = function(grunt) {
 
    grunt.initConfig({
 
-      pkg: grunt.file.readJSON('package.json'),
-      versionInfo: getCodeVersion.both(),
+      pkg: pkgJSON,
+      versionInfo: versionInfo,
       config: config,
 
       browserify: {
          main: {
             src: config.js.standalone,
             dest: config.dist.js.bundle,
+            options: {
+               transform: [
+                  [
+                     'babelify',
+                     {
+                        presets: [
+                           [
+                              '@babel/preset-env',
+                              {
+                                 debug: true,
+                                 useBuiltIns: 'usage',
+                                 shippedProposals: true,
+                                 corejs: 3,
+                              },
+                           ],
+                        ],
+                     },
+                  ],
+               ],
+            },
          },
       },
 
@@ -110,17 +136,6 @@ module.exports = function(grunt) {
          dist: config.dist.base,
       },
 
-      eslint: {
-         target: config.js.all,
-      },
-
-      stylelint: {
-         options: {
-            configFile: path.join(__dirname, 'node_modules', '@silvermine', 'standardization', '.stylelintrc.yml'),
-         },
-         src: config.sass.all,
-      },
-
       watch: {
          grunt: {
             files: [ 'Gruntfile.js' ],
@@ -137,31 +152,15 @@ module.exports = function(grunt) {
             tasks: [ 'build-css' ],
          },
       },
-
-      markdownlint: {
-         all: {
-            // Adjust `src` depending on how many files need to be linted:
-            src: [ 'README.md' ],
-            options: {
-               // eslint-disable-next-line no-sync
-               config: markdownlint.readConfigSync('.markdownlint.json'),
-            },
-         },
-      },
-
    });
 
    grunt.loadNpmTasks('grunt-contrib-uglify');
    grunt.loadNpmTasks('grunt-contrib-watch');
    grunt.loadNpmTasks('grunt-browserify');
-   grunt.loadNpmTasks('grunt-eslint');
    grunt.loadNpmTasks('grunt-postcss');
    grunt.loadNpmTasks('grunt-contrib-clean');
    grunt.loadNpmTasks('grunt-sass');
-   grunt.loadNpmTasks('grunt-stylelint');
-   grunt.loadNpmTasks('grunt-markdownlint');
 
-   grunt.registerTask('standards', [ 'eslint', 'stylelint', 'markdownlint' ]);
    grunt.registerTask('build-js', [ 'browserify', 'uglify' ]);
    grunt.registerTask('build-css', [ 'sass', 'postcss' ]);
    grunt.registerTask('build', [ 'build-js', 'build-css' ]);
